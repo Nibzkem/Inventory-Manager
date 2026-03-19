@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Account — Inventory Manager{% endblock %}
+
+{% block content %}
+  <h1>Manage Account</h1>
+  {% if user %}
+    <p>First name: {{ user.firstname }}</p>
+    <p>Last name: {{ user.lastname }}</p>
+    <p>Username: {{ user.username }}</p>
+    <p>Admin: {{ user.admin }}</p>
+
+    {% if message %}
+      <p style="color: green">{{ message }}</p>
+    {% endif %}
+
+    <form method="post">
+      <p>
+        <label>New password:<br>
+        <input type="password" name="new_password" required>
+        </label>
+      </p>
+      <p>
+        <button type="submit" class="btn btn-primary">Update Password</button>
+        
+      </p>
+    </form>
+  {% else %}
+    <p>No user data available.</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Register — Inventory Manager{% endblock %}
+
+{% block content %}
+  <h1>Register</h1>
+  {% if error %}
+    <p style="color: red">{{ error }}</p>
+  {% endif %}
+  <form method="post">
+    <p>
+      <label>First name:<br>
+      <input type="text" name="firstname" value="{{ firstname or '' }}" required>
+      </label>
+    </p>
+    <p>
+      <label>Last name:<br>
+      <input type="text" name="lastname" value="{{ lastname or '' }}" required>
+      </label>
+    </p>
+    <p>
+      <label>Username:<br>
+      <input type="text" name="username" value="{{ username or '' }}" required>
+      </label>
+    </p>
+    <p>
+      <label>Password:<br>
+      <input type="password" name="password" required>
+      </label>
+    </p>
+    <p>
+      <label><input type="checkbox" name="admin" value="1" {% if admin %}checked{% endif %}> Admin account</label>
+    </p>
+    <p>
+      <button type="submit" class="btn btn-primary">Register</button>
+      <a href="{{ url_for('login') }}" class="btn">Back to Login</a>
+    </p>
+  </form>
+{% endblock %}

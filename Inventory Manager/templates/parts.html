@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Parts — Inventory Manager{% endblock %}
+
+{% block content %}
+  <h3>Parts</h3>
+  <h4>Total parts: {{ parts|length }}</h4>
+  <p>
+    <a href="{{ url_for('add_part') }}" class="btn btn-primary">Add Part</a>
+    <a href="{{ url_for('index') }}" class="btn">Refresh</a>
+    {% if is_admin %}
+      <a href="{{ url_for('add_warehouse') }}" class="btn btn-primary">Add Warehouse</a>
+    {% endif %}
+  </p>
+
+  <table border="1" cellpadding="6" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Part ID</th>
+        <th>Part Name</th>
+        <th>Total Stock</th>
+        <th>Description</th>
+        <th>Cost per unit</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in parts %}
+      {% set total = totals_map[p.id] if totals_map and p.id in totals_map else 0 %}
+      <tr>
+        <td>{{ p.id }}</td>
+        <td><a href="{{ url_for('part_detail', part_id=p.id) }}">{{ p.name }}</a></td>
+        <td>{{ total }}</td>
+        <td>{{ p.description or '-' }}</td>
+        <td>{{ p.cost_per_unit if p.cost_per_unit is not none else '-' }}</td>
+        <td>
+          <a class="btn btn-primary" href="{{ url_for('edit_part', part_id=p.id) }}">Edit</a>
+          <a class="btn btn-danger" href="{{ url_for('delete_part', part_id=p.id) }}" onclick="return confirm('Delete this part?');">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+

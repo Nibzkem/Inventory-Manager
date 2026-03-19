@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Part — Inventory Manager{% endblock %}
+
+{% block content %}
+  <h1>Edit Part</h1>
+  {% if error %}
+    <p style="color: red">{{ error }}</p>
+  {% endif %}
+  <form method="post">
+    <p>
+      <label>Name:<br>
+      <input type="text" name="name" value="{{ name if name is defined else part.name }}" required>
+      </label>
+    </p>
+    <p>
+      <label>Description:<br>
+      <textarea name="description" rows="4" cols="50">{{ description if description is defined else (part.description or '') }}</textarea>
+      </label>
+    </p>
+    <p>
+      <label>Cost per unit:<br>
+      <input type="text" name="cost_per_unit" value="{{ cost_per_unit if cost_per_unit is defined else (part.cost_per_unit or '') }}">
+      </label>
+    </p>
+    <p>
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a href="{{ url_for('index') }}" class="btn">Cancel</a>
+    </p>
+  </form>
+{% endblock %}

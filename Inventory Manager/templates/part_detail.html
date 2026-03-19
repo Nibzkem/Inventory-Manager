@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}{{ part.name }} — Inventory Manager{% endblock %}
+
+{% block content %}
+  <p><a href="{{ url_for('index') }}">Back to Parts list</a></p>
+  <h1>{{ part.name }}</h1>
+  <h3>Total stock: {{ total_stock }}</h3>
+
+  <h4>Update stock for this part</h4>
+  <form method="post" action="{{ url_for('update_stock', part_id=part.id) }}">
+    <p>
+      <label>Warehouse:<br>
+        <select name="warehouse_id" required>
+          <option value="">-- select warehouse --</option>
+          {% for w in warehouses_all %}
+            <option value="{{ w.id }}">{{ w.name }} ({{ w.location or '-' }})</option>
+          {% endfor %}
+        </select>
+      </label>
+    </p>
+    <p>
+      <label>Quantity:<br>
+        <input type="number" name="quantity" min="0" value="0" required>
+      </label>
+    </p>
+    <p>
+      <button type="submit" class="btn btn-primary">Update Stock</button>
+    </p>
+  </form>
+
+  <table border="1" cellpadding="6" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Warehouse</th>
+        <th>Location</th>
+        <th>Quantity</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in warehouses %}
+      <tr>
+        <td>{{ w.name }}</td>
+        <td>{{ w.location }}</td>
+        <td>{{ w.quantity }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h4>Part details</h4>
+  <p>Description: {{ part.description or '-' }}</p>
+  <p>Cost per unit: {{ part.cost_per_unit or '-' }}</p>
+{% endblock %}
