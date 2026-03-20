@@ -15,40 +15,32 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret')
 db.init_app(app)
 
 
+#------------------------------------------
+# Redirect User without sessions
+#------------------------------------------
+
+# Allow access to the login page and static files without being logged in
 @app.before_request
 def require_login():
-    # Allow access to the login page and static files without being logged in
     allowed_endpoints = ('login', 'register', 'about','static')
     if request.endpoint in allowed_endpoints:
         return
-    # If the user is not logged in, redirect to login
     if 'username' not in session:
         return redirect(url_for('login'))
 
 #------------------------------------------
-# Login
+# Part CRUD Functionality
 #------------------------------------------
 
-
-
-
-
-#------------------------------------------
-# Read
-#------------------------------------------
-
-
-
-
+# Displays all parts available in home page
 @app.route('/parts', methods=['GET'])
 def index():
-    # Load all parts
     parts = Part.query.all()
     # aggregate current stock totals directly from the Inventory table to avoid any stale relationship state
     totals = db.session.query(Inventory.part_id, func.coalesce(func.sum(Inventory.quantity), 0)).group_by(Inventory.part_id).all()
     totals_map = {part_id: total for part_id, total in totals}
 
-    # determine if current user is admin
+
     is_admin = False
     if 'user_id' in session:
         user = Users.query.get(session['user_id'])
@@ -59,12 +51,10 @@ def index():
 
     return render_template('parts.html', parts=parts, totals_map=totals_map, is_admin=is_admin)
 
-
+# Retrieves part details to be viewed with a full breakdown
 @app.route('/parts/<int:part_id>')
 def part_detail(part_id):
-    # Get part or 404
     part = Part.query.get_or_404(part_id)
-    # total stock across all warehouses
     total_stock = sum(item.quantity for item in part.inventory_items) if part.inventory_items else 0
     # per-warehouse breakdown
     warehouses = []
@@ -75,11 +65,10 @@ def part_detail(part_id):
             'location': wh.location if wh else '-',
             'quantity': item.quantity
         })
-    # also provide full warehouse list for the update form
     warehouses_all = Warehouse.query.all()
     return render_template('part_detail.html', part=part, total_stock=total_stock, warehouses=warehouses, warehouses_all=warehouses_all)
 
-
+# Form created to allow updates to be made to the stock
 @app.route('/parts/<int:part_id>/update_stock', methods=['POST'])
 def update_stock(part_id):
     part = Part.query.get_or_404(part_id)
@@ -97,7 +86,6 @@ def update_stock(part_id):
     if not warehouse:
         return redirect(url_for('part_detail', part_id=part_id))
 
-    # find existing inventory item and update directly
     item = Inventory.query.filter_by(warehouse_id=warehouse.id, part_id=part.id).first()
     if item:
         item.quantity = quantity
@@ -108,7 +96,7 @@ def update_stock(part_id):
     db.session.commit()
     return redirect(url_for('part_detail', part_id=part_id))
 
-
+# Method to add parts with necessary validation
 @app.route('/parts/add', methods=['GET', 'POST'])
 def add_part():
     if request.method == 'POST':
@@ -144,32 +132,7 @@ def add_part():
 
     return render_template('add_part.html')
 
-@app.route('/manage-account', methods=['GET', 'POST'])
-def manage_account():
-    # require logged-in user (before_request already enforces this)
-    user = None
-    if 'user_id' in session:
-        user = Users.query.get(session['user_id'])
-    if user is None:
-        return redirect(url_for('login'))
-
-    message = None
-    if request.method == 'POST':
-        new_password = (request.form.get('new_password') or '').strip()
-        if not new_password:
-            message = 'Password cannot be empty.'
-        else:
-            user.hashPassword = new_password
-            db.session.commit()
-            message = 'Password updated successfully.'
-
-    return render_template('manage_account.html', user=user, message=message)
-
-
-@app.route('/about')
-def about():
-    return render_template('about.html')
-
+# Method to edit parts with necessary validation
 @app.route('/parts/<int:part_id>/edit', methods=['GET', 'POST'])
 def edit_part(part_id):
     part = Part.query.get_or_404(part_id)
@@ -196,10 +159,8 @@ def edit_part(part_id):
                 errors.append('Cost per unit must be a number.')
 
         if errors:
-            # Do NOT commit; show form with error and submitted values
             return render_template('edit_part.html', part=part, error=' '.join(errors), name=name, description=description, cost_per_unit=cost_raw)
 
-        # Valid — apply and commit
         part.name = name
         part.description = description
         part.cost_per_unit = cost
@@ -215,13 +176,11 @@ def delete_part(part_id):
     user = None
     if 'user_id' in session:
         user = Users.query.get(session['user_id'])
-    # Interpret admin as integer (works if stored as int or string '1')
     try:
         is_admin = int(getattr(user, 'admin', 0)) == 1
     except Exception:
         is_admin = False
     if not user or not is_admin:
-        # do not flash; simply redirect
         return redirect(url_for('index'))
 
     part = Part.query.get_or_404(part_id)
@@ -229,8 +188,32 @@ def delete_part(part_id):
     db.session.commit()
     return redirect(url_for('index'))
 
+#Takes user to manage account page 
+@app.route('/manage-account', methods=['GET', 'POST'])
+def manage_account():
+    user = None
+
+    message = None
+    if request.method == 'POST':
+        new_password = (request.form.get('new_password') or '').strip()
+        if not new_password:
+            message = 'Password cannot be empty.'
+        else:
+            user.hashPassword = new_password
+            db.session.commit()
+            message = 'Password updated successfully.'
+
+    return render_template('manage_account.html', user=user, message=message)
+
+# Renders the about page
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+
+
 #------------------------------------------
-# Authentication
+# Login
 #------------------------------------------
 
 @app.route('/', methods=['GET', 'POST'])
@@ -283,7 +266,6 @@ def register():
         if errors:
             return render_template('register.html', error=' '.join(errors), firstname=firstname, lastname=lastname, username=username, admin=admin_checked)
 
-        # create user (store password as plain text to match existing project style)
         new_user = Users(firstname=firstname, lastname=lastname, username=username, hashPassword=password, admin=admin_value)
         db.session.add(new_user)
         try:
@@ -298,6 +280,7 @@ def register():
 
     return render_template('register.html')
 
+# Creates a form to add new warehouses to be collected from
 @app.route('/warehouses/add', methods=['GET', 'POST'])
 def add_warehouse():
     # only admins may add warehouses
@@ -336,7 +319,6 @@ def add_warehouse():
         if errors:
             return render_template('add_warehouse.html', error=' '.join(errors), name=name, location=location, capacity=capacity_raw)
 
-        # create and commit
         wh = Warehouse(name=name, location=location or None, capacity=capacity)
         db.session.add(wh)
         db.session.commit()

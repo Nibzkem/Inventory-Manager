@@ -1,6 +1,4 @@
 """Seed script for Inventory Manager
-Run from the project root (Windows cmd):
-    python seed_data.py
 
 This creates tables (if missing) and inserts dummy Users, Parts, Warehouses and Inventory rows.
 """
@@ -20,28 +18,25 @@ def seed():
         db.session.query(Users).delete()
         db.session.commit()
 
-        # Create at least 10 users
         users = []
         users.append(Users(firstname='Admin', lastname='User', username='admin', hashPassword='password', admin=1))
         for i in range(2, 11):
             users.append(Users(firstname=f'First{i}', lastname=f'Last{i}', username=f'user{i}', hashPassword='pass{i}', admin=0))
         db.session.add_all(users)
 
-        # Create at least 10 parts
         parts = []
         for i in range(1, 11):
             parts.append(Part(name=f'Part {i}', description=f'Description for part {i}', cost_per_unit=round(1.0 + i * 0.5, 2)))
         db.session.add_all(parts)
-
-        # Create at least 10 warehouses
+        
         warehouses = []
         for i in range(1, 11):
             warehouses.append(Warehouse(name=f'Warehouse {i}', location=f'Location {i}', capacity=100 * i))
         db.session.add_all(warehouses)
 
-        db.session.commit()  # commit to get IDs
+        db.session.commit()  
 
-        # Create at least 10 inventory entries (one per part mapped to a warehouse)
+        # Create inventory entries (one per part mapped to a warehouse)
         inventory_items = []
         # Map each part to a different warehouse with deterministic quantities
         for idx, p in enumerate(parts):
@@ -49,7 +44,6 @@ def seed():
             qty = (idx + 1) * 10
             inventory_items.append(Inventory(warehouse_id=wh.id, part_id=p.id, quantity=qty))
 
-        # Add a few more inventory entries to ensure variety
         inventory_items.append(Inventory(warehouse_id=warehouses[0].id, part_id=parts[1].id, quantity=5))
         inventory_items.append(Inventory(warehouse_id=warehouses[1].id, part_id=parts[2].id, quantity=7))
 
